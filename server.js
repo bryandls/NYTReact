@@ -1,61 +1,33 @@
+const express = require("express");
+const path = require("path");
+const bodyParser = require("body-parser");
+const mongoose = require("mongoose");
+const routes = require("./routes");
+const app = express();
+const PORT = process.env.PORT || 3001;
+// Configure body parser for AJAX requests
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+// Serve up static assets
+app.use(express.static("client/build"));
+// Add routes, both API and view
+app.use(routes);
 
-// Require Node Modules
-var express = require('express');
-var bodyParser = require('body-parser');
-var mongoose = require('mongoose');
-var logger = require('morgan'); // for debugging
-
-
-
-// Initialize Express for debugging & body parsing
-var app = express();
-app.use(logger('dev'));
-app.use(bodyParser.urlencoded({
-  extended: false
-}));
-
-
-// Serve Static Content
-app.use(express.static(process.cwd() + '/public'));
-
-
-
-// Database Configuration with Mongoose
-// ---------------------------------------------------------------------------------------------------------------
-// Connect to localhost if not a production environment
-if(process.env.NODE_ENV == 'production'){
-  // Gotten using `heroku config | grep MONGODB_URI` command in Command Line
-  mongoose.connect('mongodb://heroku_kbdv0v69:860jh71jd1iu5m5639gjr0gg9l@ds129028.mlab.com:29028/heroku_kbdv0v69');
-}
-else{
-  mongoose.connect('mongodb://localhost/nytreact');
-}
-var db = mongoose.connection;
-
-// Show any Mongoose errors
-db.on('error', function(err) {
-  console.log('Mongoose Error: ', err);
+// Send every request to the React app
+// Define any API routes before this runs
+app.get("*", function(req, res) {
+  res.sendFile(path.join(__dirname, "./client/build/index.html"));
 });
-
-// Once logged in to the db through mongoose, log a success message
-db.once('open', function() {
-  console.log('Mongoose connection successful.');
-});
-
-// Import the Article model
-var Article = require('./models/Article.js');
-// ---------------------------------------------------------------------------------------------------------------
-
-
-
-// Import Routes/Controller
-var router = require('./controllers/controller.js');
-app.use('/', router);
-
-
-
-// Launch App
-var port = process.env.PORT || 3001;
-app.listen(port, function(){
-  console.log('Running on port: ' + port);
+// Set up promises with mongoose
+mongoose.Promise = global.Promise;
+// Connect to the Mongo DB
+mongoose.connect(
+  process.env.MONGODB_URI || "mongodb://localhost/nytreact",
+  // {
+  //   useMongoClient: true
+  // }
+);
+// Start the API server
+app.listen(PORT, function() {
+  console.log(`🌎  ==> API Server now listening on PORT ${PORT}!`);
 });
